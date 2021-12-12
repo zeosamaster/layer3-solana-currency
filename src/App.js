@@ -7,7 +7,7 @@ const App = () => {
   const [loading, setLoading] = React.useState(false);
   const { wallet, toggleConnection } = useWallet();
   const { airdrop } = useAirdrop({ wallet, setLoading });
-  const { mint } = useToken({ wallet, setLoading });
+  const { mint, mintAgain } = useToken({ wallet, setLoading });
 
   return (
     <div>
@@ -37,6 +37,18 @@ const App = () => {
           <p>Create your own token</p>
           <button disabled={loading} onClick={mint}>
             Initial Mint
+          </button>
+        </div>
+      )}
+
+      {wallet && (
+        <div>
+          <p>Mint 100 additional tokens</p>
+          <button
+            disabled={loading || !mintAgain}
+            onClick={() => mintAgain(100)}
+          >
+            Mint Again
           </button>
         </div>
       )}

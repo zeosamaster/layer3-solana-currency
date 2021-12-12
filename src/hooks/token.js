@@ -142,5 +142,67 @@ export function useToken({ wallet, setLoading }) {
     setLoading(false);
   }, [setLoading, getConnection, airdropMintingWallet, getAccounts, transfer]);
 
-  return { mint };
+  const mintAgain = React.useCallback(
+    async (amount) => {
+      console.log("Minting additional tokens");
+
+      setLoading(true);
+
+      try {
+        const connection = getConnection();
+        const newMintingWallet = Keypair.fromSecretKey(
+          Uint8Array.from(Object.values(mintingWallet.secretKey))
+        );
+
+        await airdropMintingWallet(connection, newMintingWallet);
+
+        const creatorToken = new Token(
+          connection,
+          tokenPublicKey,
+          TOKEN_PROGRAM_ID,
+          newMintingWallet
+        );
+
+        const { origin, destination } = await getAccounts(
+          creatorToken,
+          newMintingWallet
+        );
+
+        await creatorToken.mintTo(
+          origin.address,
+          newMintingWallet.publicKey,
+          [],
+          amount * TOKENS_TO_MINT_MULTIPLIER
+        );
+
+        await transfer(
+          connection,
+          origin,
+          destination,
+          newMintingWallet,
+          amount * TOKENS_TO_MINT_MULTIPLIER
+        );
+
+        console.log("Minting successfull");
+      } catch (err) {
+        console.log("Error minting");
+        console.error(err);
+      }
+
+      console.log("Minting finished");
+
+      setLoading(false);
+    },
+    [
+      setLoading,
+      tokenPublicKey,
+      mintingWallet,
+      getConnection,
+      airdropMintingWallet,
+      getAccounts,
+      transfer,
+    ]
+  );
+
+  return { mint, mintAgain: tokenPublicKey ? mintAgain : null };
 }
