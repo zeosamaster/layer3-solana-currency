@@ -16,6 +16,53 @@ export function useToken({ wallet, setLoading }) {
   const [tokenPublicKey, setTokenPublicKey] = React.useState(null);
   const [mintingWallet, setMintingWallet] = React.useState(null);
 
+  // load stored values
+  React.useEffect(() => {
+    const storedKey = localStorage.getItem("layer3-solana-currency-token");
+    if (!storedKey) {
+      return;
+    }
+
+    const publicKey = new PublicKey(storedKey);
+    setTokenPublicKey(publicKey);
+  }, []);
+
+  React.useEffect(() => {
+    const storedKey = localStorage.getItem(
+      "layer3-solana-currency-minting-wallet"
+    );
+    if (!storedKey) {
+      return;
+    }
+
+    const storedWallet = Keypair.fromSecretKey(
+      Uint8Array.from(Object.values(JSON.parse(storedKey)))
+    );
+    setMintingWallet(storedWallet);
+  }, []);
+
+  // store values
+  React.useEffect(() => {
+    if (!tokenPublicKey) {
+      return;
+    }
+    localStorage.setItem(
+      "layer3-solana-currency-token",
+      tokenPublicKey.toString()
+    );
+  }, [tokenPublicKey]);
+
+  React.useEffect(() => {
+    if (!mintingWallet) {
+      return;
+    }
+    localStorage.setItem(
+      "layer3-solana-currency-minting-wallet",
+      JSON.stringify(mintingWallet.secretKey)
+    );
+  }, [mintingWallet]);
+
+  // methods
   const mint = React.useCallback(async () => {
     setLoading(true);
 
