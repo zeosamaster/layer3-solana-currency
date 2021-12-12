@@ -3,6 +3,8 @@ import { useAirdrop } from "./hooks/airdrop";
 import { useToken } from "./hooks/token";
 import { useWallet } from "./hooks/wallet";
 
+import "./App.css";
+
 const App = () => {
   const [loading, setLoading] = React.useState(false);
   const { wallet, toggleConnection } = useWallet();
@@ -18,28 +20,32 @@ const App = () => {
     <div>
       <h1>Create your own token using JavaScript</h1>
 
-      <button disabled={loading} onClick={toggleConnection}>
-        {!wallet ? "Connect Wallet" : "Disconnect Wallet"}
-      </button>
+      <div className="container">
+        <button disabled={loading} onClick={toggleConnection}>
+          {!wallet ? "Connect Wallet" : "Disconnect Wallet"}
+        </button>
+      </div>
 
       {wallet && (
-        <p>
-          <strong>Public Key:</strong> {wallet.publicKey.toString()}
-        </p>
+        <div className="container">
+          <span>
+            <strong>Public Key:</strong> {wallet.publicKey.toString()}
+          </span>
+        </div>
       )}
 
       {wallet && (
-        <div>
-          <p>Airdrop 1 SOL into your wallet</p>
+        <div className="container">
+          <span>Airdrop 1 SOL into your wallet</span>
           <button disabled={loading} onClick={airdrop}>
-            AirDrop SOL
+            Airdrop SOL
           </button>
         </div>
       )}
 
       {wallet && (
-        <div>
-          <p>Create your own token</p>
+        <div className="container">
+          <span>Create your own token</span>
           <button disabled={loading} onClick={mint}>
             Initial Mint
           </button>
@@ -47,8 +53,8 @@ const App = () => {
       )}
 
       {wallet && (
-        <div>
-          <p>Mint 100 additional tokens</p>
+        <div className="container">
+          <span>Mint 100 additional tokens</span>
           <button
             disabled={loading || !mintAgain || isSupplyCapped}
             onClick={() => mintAgain(100)}
@@ -59,8 +65,8 @@ const App = () => {
       )}
 
       {wallet && (
-        <div>
-          <p>Transfer 10 of your tokens to another wallet</p>
+        <div className="container">
+          <span>Transfer 10 of your tokens to another wallet</span>
           <input
             type="text"
             value={transferWallet}
@@ -76,8 +82,8 @@ const App = () => {
       )}
 
       {wallet && (
-        <div>
-          <p>Cap supply</p>
+        <div className="container">
+          <span>Cap supply</span>
           <button disabled={loading || isSupplyCapped} onClick={capSupply}>
             Cap Supply
           </button>

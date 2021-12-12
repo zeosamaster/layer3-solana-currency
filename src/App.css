@@ -1,0 +1,54 @@
+body {
+  height: 100vh;
+  background-color: #141414;
+  overflow: scroll;
+  text-align: center;
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: white;
+  font-size: 20px;
+  font-family: "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell",
+    "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+}
+
+.container {
+  margin-top: 30px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.container > * {
+  margin: 3px 0;
+}
+
+.container button {
+  height: 40px;
+  border: 0;
+  width: 20rem;
+  padding-left: 40px;
+  padding-right: 40px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  animation: gradient-animation 4s ease infinite;
+  background: -webkit-linear-gradient(left, #4e44ce, #35aee2);
+}
+
+.container button:disabled {
+  background-color: lightgray;
+}
+
+.container input {
+  width: 20rem;
+  line-height: 28px;
+  font-family: "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell",
+    "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+}
