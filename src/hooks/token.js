@@ -1,5 +1,5 @@
 import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { Keypair } from "@solana/web3.js";
+import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import React from "react";
 import {
   airdropMintingWallet,
@@ -173,8 +173,72 @@ export function useToken({ wallet, setLoading }) {
     [wallet, setLoading, tokenPublicKey, mintingWallet]
   );
 
+  const transfer = React.useCallback(
+    async (destinationPubKeyString, amount) => {
+      console.log(`Transfer ${amount} tokens`, {
+        destination: destinationPubKeyString,
+      });
+
+      setLoading(true);
+
+      try {
+        const connection = getConnection();
+        const newMintingWallet = Keypair.fromSecretKey(
+          Uint8Array.from(Object.values(mintingWallet.secretKey))
+        );
+
+        await airdropMintingWallet(connection, newMintingWallet);
+
+        const creatorToken = new Token(
+          connection,
+          tokenPublicKey,
+          TOKEN_PROGRAM_ID,
+          newMintingWallet
+        );
+
+        const receiverWalletPublicKey = new PublicKey(destinationPubKeyString);
+        const { origin, destination } = await getAccounts(
+          creatorToken,
+          wallet,
+          { publicKey: receiverWalletPublicKey }
+        );
+
+        const transaction = new Transaction().add(
+          Token.createTransferInstruction(
+            TOKEN_PROGRAM_ID,
+            origin.address,
+            destination.address,
+            wallet.publicKey,
+            [],
+            amount * TOKENS_TO_MINT_MULTIPLIER
+          )
+        );
+        transaction.feePayer = wallet.publicKey;
+
+        const blockhashObj = await connection.getRecentBlockhash();
+        transaction.recentBlockhash = blockhashObj.blockhash;
+
+        const signed = await wallet.signTransaction(transaction);
+        const signature = await connection.sendRawTransaction(
+          signed.serialize()
+        );
+        await connection.confirmTransaction(signature);
+
+        console.log("Transfer succeeded");
+      } catch (err) {
+        console.log("Transfer failed");
+        console.error(err);
+      }
+
+      console.log("Transfer finished");
+      setLoading(false);
+    },
+    [wallet, setLoading, tokenPublicKey, mintingWallet]
+  );
+
   return {
     mint,
     mintAgain: tokenPublicKey ? mintAgain : null,
+    transfer: tokenPublicKey ? transfer : null,
   };
 }

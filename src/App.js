@@ -7,7 +7,9 @@ const App = () => {
   const [loading, setLoading] = React.useState(false);
   const { wallet, toggleConnection } = useWallet();
   const { airdrop } = useAirdrop({ wallet, setLoading });
-  const { mint, mintAgain } = useToken({ wallet, setLoading });
+  const { mint, mintAgain, transfer } = useToken({ wallet, setLoading });
+
+  const [transferWallet, setTransferWallet] = React.useState("");
 
   return (
     <div>
@@ -49,6 +51,23 @@ const App = () => {
             onClick={() => mintAgain(100)}
           >
             Mint Again
+          </button>
+        </div>
+      )}
+
+      {wallet && (
+        <div>
+          <p>Transfer 10 of your tokens to another wallet</p>
+          <input
+            type="text"
+            value={transferWallet}
+            onChange={(e) => setTransferWallet(e.target.value)}
+          />
+          <button
+            disabled={loading || !transfer}
+            onClick={() => transfer(transferWallet, 10)}
+          >
+            Transfer
           </button>
         </div>
       )}
