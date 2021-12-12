@@ -15,6 +15,7 @@ const INITIAL_MINTED_TOKENS = 1;
 export function useToken({ wallet, setLoading }) {
   const [tokenPublicKey, setTokenPublicKey] = React.useState(null);
   const [mintingWallet, setMintingWallet] = React.useState(null);
+  const [isSupplyCapped, setIsSupplyCapped] = React.useState(false);
 
   // load stored values
   React.useEffect(() => {
@@ -41,6 +42,17 @@ export function useToken({ wallet, setLoading }) {
     setMintingWallet(storedWallet);
   }, []);
 
+  React.useEffect(() => {
+    const storedValue = localStorage.getItem(
+      "layer3-solana-currency-supply-capped"
+    );
+    if (storedValue === null) {
+      return;
+    }
+
+    setIsSupplyCapped(Boolean(storedValue));
+  }, []);
+
   // store values
   React.useEffect(() => {
     if (!tokenPublicKey) {
@@ -61,6 +73,16 @@ export function useToken({ wallet, setLoading }) {
       JSON.stringify(mintingWallet.secretKey)
     );
   }, [mintingWallet]);
+
+  React.useEffect(() => {
+    if (isSupplyCapped === null) {
+      return;
+    }
+    localStorage.setItem(
+      "layer3-solana-currency-supply-capped",
+      isSupplyCapped
+    );
+  }, [isSupplyCapped]);
 
   // methods
   const mint = React.useCallback(async () => {
@@ -106,6 +128,7 @@ export function useToken({ wallet, setLoading }) {
       );
 
       setTokenPublicKey(creatorToken.publicKey);
+      setIsSupplyCapped(false);
 
       console.log("Minting successfull");
     } catch (err) {
@@ -120,6 +143,10 @@ export function useToken({ wallet, setLoading }) {
 
   const mintAgain = React.useCallback(
     async (amount) => {
+      if (isSupplyCapped) {
+        return;
+      }
+
       console.log("Minting additional tokens");
 
       setLoading(true);
@@ -170,7 +197,7 @@ export function useToken({ wallet, setLoading }) {
 
       setLoading(false);
     },
-    [wallet, setLoading, tokenPublicKey, mintingWallet]
+    [wallet, setLoading, isSupplyCapped, tokenPublicKey, mintingWallet]
   );
 
   const transfer = React.useCallback(
@@ -236,9 +263,55 @@ export function useToken({ wallet, setLoading }) {
     [wallet, setLoading, tokenPublicKey, mintingWallet]
   );
 
+  const capSupply = React.useCallback(async () => {
+    setLoading(true);
+
+    try {
+      const connection = getConnection();
+      const newMintingWallet = Keypair.fromSecretKey(
+        Uint8Array.from(Object.values(mintingWallet.secretKey))
+      );
+
+      await airdropMintingWallet(connection, newMintingWallet);
+
+      const creatorToken = new Token(
+        connection,
+        tokenPublicKey,
+        TOKEN_PROGRAM_ID,
+        newMintingWallet
+      );
+
+      console.log(
+        `Setting authority of ${newMintingWallet.publicKey.toString()} to null`
+      );
+
+      await creatorToken.setAuthority(
+        tokenPublicKey,
+        null,
+        "MintTokens",
+        newMintingWallet.publicKey,
+        [newMintingWallet]
+      );
+
+      console.log(`Authority successfully changed`);
+
+      setIsSupplyCapped(true);
+
+      console.log("Supply cap successful");
+    } catch (err) {
+      console.log("Supply cap failed");
+      console.error(err);
+    }
+
+    console.log("Supply cap finished");
+    setLoading(false);
+  }, [setLoading, mintingWallet, tokenPublicKey]);
+
   return {
+    isSupplyCapped,
     mint,
     mintAgain: tokenPublicKey ? mintAgain : null,
     transfer: tokenPublicKey ? transfer : null,
+    capSupply,
   };
 }

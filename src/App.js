@@ -7,7 +7,10 @@ const App = () => {
   const [loading, setLoading] = React.useState(false);
   const { wallet, toggleConnection } = useWallet();
   const { airdrop } = useAirdrop({ wallet, setLoading });
-  const { mint, mintAgain, transfer } = useToken({ wallet, setLoading });
+  const { isSupplyCapped, mint, mintAgain, transfer, capSupply } = useToken({
+    wallet,
+    setLoading,
+  });
 
   const [transferWallet, setTransferWallet] = React.useState("");
 
@@ -47,7 +50,7 @@ const App = () => {
         <div>
           <p>Mint 100 additional tokens</p>
           <button
-            disabled={loading || !mintAgain}
+            disabled={loading || !mintAgain || isSupplyCapped}
             onClick={() => mintAgain(100)}
           >
             Mint Again
@@ -68,6 +71,15 @@ const App = () => {
             onClick={() => transfer(transferWallet, 10)}
           >
             Transfer
+          </button>
+        </div>
+      )}
+
+      {wallet && (
+        <div>
+          <p>Cap supply</p>
+          <button disabled={loading || isSupplyCapped} onClick={capSupply}>
+            Cap Supply
           </button>
         </div>
       )}
