@@ -1,11 +1,12 @@
-import {
-  Keypair,
-  Transaction,
-  sendAndConfirmTransaction,
-} from "@solana/web3.js";
 import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { Keypair } from "@solana/web3.js";
 import React from "react";
-import { Connection, clusterApiUrl, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import {
+  airdropMintingWallet,
+  getAccounts,
+  getConnection,
+  sendTransfer,
+} from "../utils/web3";
 
 const DECIMALS = 6;
 const TOKENS_TO_MINT_MULTIPLIER = Math.pow(10, DECIMALS);
@@ -14,79 +15,6 @@ const INITIAL_MINTED_TOKENS = 1;
 export function useToken({ wallet, setLoading }) {
   const [tokenPublicKey, setTokenPublicKey] = React.useState(null);
   const [mintingWallet, setMintingWallet] = React.useState(null);
-
-  const getConnection = React.useCallback(() => {
-    return new Connection(clusterApiUrl("devnet"), "confirmed");
-  }, []);
-
-  const airdropMintingWallet = React.useCallback(
-    async (connection, mintingWallet) => {
-      console.log("Airdropping 1 SOL", {
-        mintingWallet: mintingWallet.publicKey.toString(),
-      });
-
-      var tx = await connection.requestAirdrop(
-        mintingWallet.publicKey,
-        LAMPORTS_PER_SOL
-      );
-      await connection.confirmTransaction(tx, { commitment: "confirmed" });
-
-      console.log("Airdrop completed");
-    },
-    []
-  );
-
-  const getAccounts = React.useCallback(
-    async (creatorToken, originWallet) => {
-      console.log("Getting accounts", { creatorToken, originWallet });
-      const origin = await creatorToken.getOrCreateAssociatedAccountInfo(
-        originWallet.publicKey
-      );
-
-      const destination = await creatorToken.getOrCreateAssociatedAccountInfo(
-        wallet.publicKey
-      );
-
-      console.log("Got accounts", { origin, destination });
-
-      return { origin, destination };
-    },
-    [wallet]
-  );
-
-  const transfer = React.useCallback(
-    async (connection, origin, destination, mintWallet, amount) => {
-      console.log(`Transfering ${amount} tokens`, {
-        destination: destination.toString(),
-        origin: origin.toString(),
-      });
-
-      const tx = new Transaction().add(
-        Token.createTransferInstruction(
-          TOKEN_PROGRAM_ID,
-          origin.address,
-          destination.address,
-          mintWallet.publicKey,
-          [],
-          amount
-        )
-      );
-
-      const signature = await sendAndConfirmTransaction(
-        connection,
-        tx,
-        [mintWallet],
-        {
-          commitment: "confirmed",
-        }
-      );
-
-      console.log("Tranfer completed", { signature });
-
-      return signature;
-    },
-    []
-  );
 
   const mint = React.useCallback(async () => {
     setLoading(true);
@@ -111,7 +39,8 @@ export function useToken({ wallet, setLoading }) {
 
       const { origin, destination } = await getAccounts(
         creatorToken,
-        newMintingWallet
+        newMintingWallet,
+        wallet
       );
 
       await creatorToken.mintTo(
@@ -121,7 +50,7 @@ export function useToken({ wallet, setLoading }) {
         INITIAL_MINTED_TOKENS * TOKENS_TO_MINT_MULTIPLIER
       );
 
-      await transfer(
+      await sendTransfer(
         connection,
         origin,
         destination,
@@ -140,7 +69,7 @@ export function useToken({ wallet, setLoading }) {
     console.log("Minting finished");
 
     setLoading(false);
-  }, [setLoading, getConnection, airdropMintingWallet, getAccounts, transfer]);
+  }, [wallet, setLoading]);
 
   const mintAgain = React.useCallback(
     async (amount) => {
@@ -165,7 +94,8 @@ export function useToken({ wallet, setLoading }) {
 
         const { origin, destination } = await getAccounts(
           creatorToken,
-          newMintingWallet
+          newMintingWallet,
+          wallet
         );
 
         await creatorToken.mintTo(
@@ -175,7 +105,7 @@ export function useToken({ wallet, setLoading }) {
           amount * TOKENS_TO_MINT_MULTIPLIER
         );
 
-        await transfer(
+        await sendTransfer(
           connection,
           origin,
           destination,
@@ -193,16 +123,11 @@ export function useToken({ wallet, setLoading }) {
 
       setLoading(false);
     },
-    [
-      setLoading,
-      tokenPublicKey,
-      mintingWallet,
-      getConnection,
-      airdropMintingWallet,
-      getAccounts,
-      transfer,
-    ]
+    [wallet, setLoading, tokenPublicKey, mintingWallet]
   );
 
-  return { mint, mintAgain: tokenPublicKey ? mintAgain : null };
+  return {
+    mint,
+    mintAgain: tokenPublicKey ? mintAgain : null,
+  };
 }
